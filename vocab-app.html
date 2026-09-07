@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vocab. — a word, kept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EFE7D8;
+    --card: #FAF6EC;
+    --ink: #2B2620;
+    --ink-soft: #6B6254;
+    --green: #2F4B3D;
+    --green-soft: #40624E;
+    --rust: #B4502F;
+    --line: #C9BFA8;
+    --shadow: rgba(43, 38, 32, 0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+
+  .wordmark {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .tagline {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 320px;
+  }
+
+  form.search {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .search input {
+    flex: 1;
+    font-family: 'Source Serif 4', serif;
+    font-size: 20px;
+    padding: 10px 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    color: var(--ink);
+    outline: none;
+  }
+
+  .search input::placeholder { color: var(--ink-soft); font-style: italic; }
+
+  .search input:focus-visible { border-bottom-color: var(--green); }
+
+  .search button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--green);
+    color: var(--card);
+    border: none;
+    padding: 0 22px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .search button:hover { background: var(--green-soft); }
+  .search button:disabled { background: var(--line); cursor: default; }
+  .search button:focus-visible, a:focus-visible, .chip:focus-visible, .history-item:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  @media (min-width: 860px) {
+    .layout { grid-template-columns: 1.6fr 1fr; align-items: start; }
+  }
+
+  .panel-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+
+  .empty-state {
+    border: 1px dashed var(--line);
+    padding: 40px 28px;
+    text-align: left;
+  }
+
+  .empty-state h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 24px;
+    margin: 0 0 10px;
+    max-width: 22ch;
+  }
+
+  .empty-state p {
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .error-note {
+    border-left: 3px solid var(--rust);
+    background: var(--card);
+    padding: 14px 18px;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  .loading-note {
+    color: var(--ink-soft);
+    font-style: italic;
+    font-family: 'Source Serif 4', serif;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .loading-note { animation: pulse 1.4s ease-in-out infinite; }
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .entry-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--green);
+    padding: 32px 32px 28px;
+  }
+
+  .headword-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .headword {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 44px;
+    margin: 0;
+    text-transform: capitalize;
+  }
+
+  .phonetic {
+    font-family: 'Source Serif 4', serif;
+    color: var(--ink-soft);
+    font-size: 16px;
+  }
+
+  .play-btn {
+    border: 1px solid var(--line);
+    background: transparent;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+    font-size: 12px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .play-btn:hover { background: var(--green); color: var(--card); border-color: var(--green); }
+
+  .definitions {
+    margin: 22px 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: def;
+  }
+
+  .definitions li {
+    counter-increment: def;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .definitions li::before {
+    content: counter(def) ".";
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+
+  .pos {
+    font-style: italic;
+    color: var(--green);
+    margin-right: 6px;
+  }
+
+  .section-block {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .section-title {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+
+  .hindi-text {
+    font-family: 'Noto Sans Devanagari', 'Source Serif 4', serif;
+    font-size: 22px;
+  }
+
+  .synonyms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    font-size: 14px;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .chip:hover { background: var(--green); border-color: var(--green); color: var(--card); }
+
+  blockquote.example {
+    margin: 0;
+    padding-left: 16px;
+    border-left: 2px solid var(--line);
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink);
+  }
+
+  .history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+
+  .history-item:hover { border-color: var(--green); }
+
+  .history-word {
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .history-hindi {
+    font-family: 'Noto Sans Devanagari', 'Source Serif 4', serif;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .history-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    overflow: hidden;
+  }
+
+  .history-word-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+  }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  .remove-btn:hover { color: var(--rust); }
+
+  .history-empty {
+    font-size: 14px;
+    color: var(--ink-soft);
+    border: 1px dashed var(--line);
+    padding: 18px;
+  }
+
+  .clear-all {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 14px;
+  }
+
+  .clear-all:hover { color: var(--rust); }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--ink-soft);
+    max-width: 60ch;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.3/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const HISTORY_KEY = "vocab-history";
+const MAX_HISTORY = 60;
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHistory(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error("Could not save history:", e);
+  }
+}
+
+// Turns "//ssl.gstatic.com/..." into a proper https URL, since some
+// dictionaryapi.dev entries return protocol-relative audio links.
+function normalizeAudioUrl(url) {
+  if (!url) return "";
+  return url.startsWith("//") ? "https:" + url : url;
+}
+
+async function fetchWordData(term) {
+  const word = term.trim().toLowerCase();
+
+  const dictRes = await fetch(
+    "https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(word)
+  );
+  if (!dictRes.ok) {
+    throw new Error("not-found");
+  }
+  const dictData = await dictRes.json();
+  const entry = dictData[0];
+
+  const phoneticText =
+    entry.phonetic || (entry.phonetics.find((p) => p.text) || {}).text || "";
+  const audioRaw = (entry.phonetics.find((p) => p.audio) || {}).audio || "";
+  const audio = normalizeAudioUrl(audioRaw);
+
+  const definitions = entry.meanings
+    .flatMap((m) =>
+      m.definitions.map((d) => ({
+        partOfSpeech: m.partOfSpeech,
+        definition: d.definition,
+        example: d.example || null,
+      }))
+    )
+    .slice(0, 4);
+
+  const example = (definitions.find((d) => d.example) || {}).example || null;
+
+  // Synonyms come from Datamuse rather than dictionaryapi.dev, because
+  // dictionaryapi.dev's synonym field is empty for a lot of entries.
+  let synonyms = [];
+  try {
+    const synRes = await fetch(
+      "https://api.datamuse.com/words?rel_syn=" + encodeURIComponent(word) + "&max=8"
+    );
+    if (synRes.ok) {
+      const synData = await synRes.json();
+      synonyms = synData.map((s) => s.word);
+    }
+  } catch (e) {
+    // synonyms are a bonus, not essential — fail quietly
+  }
+
+  // Hindi gloss via MyMemory (free, no key needed).
+  let hindi = "";
+  try {
+    const hiRes = await fetch(
+      "https://api.mymemory.translated.net/get?q=" +
+        encodeURIComponent(word) +
+        "&langpair=en|hi"
+    );
+    if (hiRes.ok) {
+      const hiData = await hiRes.json();
+      hindi = (hiData.responseData || {}).translatedText || "";
+    }
+  } catch (e) {
+    // same — non-essential, fail quietly
+  }
+
+  return {
+    word,
+    phonetic: phoneticText,
+    audio,
+    definitions,
+    example,
+    synonyms,
+    hindi,
+    savedAt: Date.now(),
+  };
+}
+
+function HistoryItem({ item, onSelect, onRemove }) {
+  return (
+    <li className="history-item">
+      <button
+        className="history-word-btn"
+        onClick={() => onSelect(item)}
+        aria-label={"Revisit " + item.word}
+      >
+        <div className="history-main">
+          <span className="history-word">{item.word}</span>
+          {item.hindi ? <span className="history-hindi">{item.hindi}</span> : null}
+        </div>
+      </button>
+      <button
+        className="remove-btn"
+        onClick={() => onRemove(item.word)}
+        aria-label={"Remove " + item.word}
+        title="Remove"
+      >
+        &times;
+      </button>
+    </li>
+  );
+}
+
+function App() {
+  const [query, setQuery] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
+  function commitHistory(entry) {
+    setHistory((prev) => {
+      const withoutDup = prev.filter((h) => h.word !== entry.word);
+      const next = [entry, ...withoutDup].slice(0, MAX_HISTORY);
+      saveHistory(next);
+      return next;
+    });
+  }
+
+  async function handleSearch(e) {
+    e.preventDefault();
+    const term = query.trim();
+    if (!term) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchWordData(term);
+      setResult(data);
+      commitHistory(data);
+    } catch (err) {
+      setError(term);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleHistorySelect(item) {
+    setResult(item);
+    setQuery(item.word);
+    setError(null);
+  }
+
+  function handleHistoryRemove(word) {
+    setHistory((prev) => {
+      const next = prev.filter((h) => h.word !== word);
+      saveHistory(next);
+      return next;
+    });
+  }
+
+  function handleClearAll() {
+    if (!window.confirm("Clear your whole saved word list?")) return;
+    setHistory([]);
+    saveHistory([]);
+  }
+
+  function playAudio() {
+    if (result && result.audio && audioRef.current) {
+      audioRef.current.play();
+    }
+  }
+
+  return (
+    <div className="shell">
+      <header>
+        <div>
+          <p className="wordmark">Vocab.</p>
+          <p className="tagline">Look a word up once — it stays here for next time.</p>
+        </div>
+      </header>
+
+      <form className="search" onSubmit={handleSearch}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Type a word you just read…"
+          aria-label="Word to look up"
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Looking…" : "Look up"}
+        </button>
+      </form>
+
+      <div className="layout">
+        <div>
+          {error && (
+            <div className="error-note">
+              Couldn't find "{error}" — check the spelling, or try the base form of the word.
+            </div>
+          )}
+
+          {loading && !error && <p className="loading-note">Looking that up…</p>}
+
+          {!loading && !error && !result && (
+            <div className="empty-state">
+              <h2>Every book leaves a few words behind.</h2>
+              <p>Search one above, and it's saved here so it doesn't stay behind for long.</p>
+            </div>
+          )}
+
+          {!loading && result && (
+            <div className="entry-card">
+              <div className="headword-row">
+                <h1 className="headword">{result.word}</h1>
+                {result.phonetic && <span className="phonetic">{result.phonetic}</span>}
+                {result.audio && (
+                  <React.Fragment>
+                    <button className="play-btn" onClick={playAudio} aria-label="Play pronunciation">
+                      &#9654;
+                    </button>
+                    <audio ref={audioRef} src={result.audio} preload="none" />
+                  </React.Fragment>
+                )}
+              </div>
+
+              {result.definitions && result.definitions.length > 0 && (
+                <ol className="definitions">
+                  {result.definitions.map((d, i) => (
+                    <li key={i}>
+                      <span>
+                        <span className="pos">{d.partOfSpeech}</span>
+                        {d.definition}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+              {result.hindi && (
+                <div className="section-block">
+                  <p className="section-title">In Hindi</p>
+                  <p className="hindi-text">{result.hindi}</p>
+                </div>
+              )}
+
+              {result.synonyms && result.synonyms.length > 0 && (
+                <div className="section-block">
+                  <p className="section-title">Synonyms</p>
+                  <div className="synonyms">
+                    {result.synonyms.map((s) => (
+                      <button
+                        key={s}
+                        className="chip"
+                        onClick={() => {
+                          setQuery(s);
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {result.example && (
+                <div className="section-block">
+                  <p className="section-title">Used in a sentence</p>
+                  <blockquote className="example">{result.example}</blockquote>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="panel-label">Saved words ({history.length})</p>
+          {history.length === 0 ? (
+            <div className="history-empty">No words yet — your first search will land here.</div>
+          ) : (
+            <React.Fragment>
+              <ul className="history-list">
+                {history.map((item) => (
+                  <HistoryItem
+                    key={item.word}
+                    item={item}
+                    onSelect={handleHistorySelect}
+                    onRemove={handleHistoryRemove}
+                  />
+                ))}
+              </ul>
+              <button className="clear-all" onClick={handleClearAll}>
+                Clear all
+              </button>
+            </React.Fragment>
+          )}
+        </div>
+      </div>
+
+      <footer>
+        Definitions come from the Free Dictionary API, synonyms from Datamuse, and Hindi
+        translations from MyMemory. All three are free and don't need an API key.
+      </footer>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
